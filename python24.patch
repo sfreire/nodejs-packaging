@@ -1,0 +1,164 @@
+diff -urN old/nodejs-fixdep new/nodejs-fixdep
+--- old/nodejs-fixdep	2013-11-06 15:47:20.742880061 +0000
++++ new/nodejs-fixdep	2013-11-06 14:47:41.902899965 +0000
+@@ -22,7 +22,7 @@
+ # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ # IN THE SOFTWARE.
+ 
+-import json
++import simplejson as json
+ import os
+ import shutil
+ import sys
+diff -urN old/nodejs.prov new/nodejs.prov
+--- old/nodejs.prov	2013-11-06 15:47:20.742880061 +0000
++++ new/nodejs.prov	2013-11-06 14:47:51.719013258 +0000
+@@ -25,7 +25,7 @@
+ # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ # IN THE SOFTWARE.
+ 
+-import json
++import simplejson as json
+ import subprocess
+ import sys
+ 
+diff -urN old/nodejs.req new/nodejs.req
+--- old/nodejs.req	2013-11-06 15:47:20.742880061 +0000
++++ new/nodejs.req	2013-11-06 15:44:13.858731499 +0000
+@@ -26,8 +26,8 @@
+ # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ # IN THE SOFTWARE.
+ 
+-from __future__ import unicode_literals
+-import json
++#from __future__ import unicode_literals
++import simplejson as json
+ import re
+ import subprocess
+ import sys
+@@ -129,34 +129,63 @@
+     #oh boy, here we go...
+     else:
+         #split the dotted portions into a list (handling trailing dots properly)
+-        parts = [part if part else 'x' for part in version.split('.')]
+-        parts = [int(part) if part != 'x' and not '-' in part
+-                                                    else part for part in parts]
++
++#        parts = [part if part else 'x' for part in version.split('.')]
++#        parts = [int(part) if part != 'x' and not '-' in part
++#                                                    else part for part in parts]
++
++	parts0 = []
++	parts = []
++	for part in version.split('.'):
++		if part:
++        		tpart=part
++		else:
++			tpart='x'
++		parts0.append(tpart)
++
++
++	for part in parts0:
++		if part != 'x' and not '-' in part:
++			tpart=int(part)
++		else:
++			tpart=part
++		parts.append(tpart)
++		
++
+ 
+         # 1 or 1.x or 1.x.x or ~1
+         if len(parts) == 1 or parts[1] == 'x':
+             if parts[0] != 0:
+-                deps.append('{0} >= {1}'.format(req, parts[0]))
+-            deps.append('{0} < {1}'.format(req, parts[0]+1))
++                #deps.append('{0} >= {1}'.format(req, parts[0]))
++                deps.append('%s >= %s' % (req, parts[0]))
++            #deps.append('{0} < {1}'.format(req, parts[0]+1))
++            deps.append('%s < %s' % (req, parts[0]+1))
+ 
+         # 1.2.3 or 1.2.3-4 or 1.2.x or ~1.2.3 or 1.2
+         elif len(parts) == 3 or operator != '~':
+             # 1.2.x or 1.2
+             if len(parts) == 2 or parts[2] == 'x':
+-                deps.append('{0} >= {1}.{2}'.format(req, parts[0], parts[1]))
+-                deps.append('{0} < {1}.{2}'.format(req, parts[0], parts[1]+1))
++                #deps.append('{0} >= {1}.{2}'.format(req, parts[0], parts[1]))
++                deps.append('%s >= %s.%s' % (req, parts[0], parts[1]))
++                #deps.append('{0} < {1}.{2}'.format(req, parts[0], parts[1]+1))
++                deps.append('%s < %s.%s' % (req, parts[0], parts[1]+1))
+             # ~1.2.3
+             elif operator == '~':
+-                deps.append('{0} >= {1}'.format(req, version))
+-                deps.append('{0} < {1}.{2}'.format(req, parts[0], parts[1]+1))
++                #deps.append('{0} >= {1}'.format(req, version))
++                deps.append('%s >= %s' % (req, version))
++                #deps.append('{0} < {1}.{2}'.format(req, parts[0], parts[1]+1))
++                deps.append('%s < %s.%s' % (req, parts[0], parts[1]+1))
+             # 1.2.3 or 1.2.3-4
+             else:
+-                deps.append('{0} = {1}'.format(req, version))
++                #deps.append('{0} = {1}'.format(req, version))
++                deps.append('%s = %s' % (req, version))
+ 
+         # ~1.2
+         else:
+-            deps.append('{0} >= {1}'.format(req, version))
+-            deps.append('{0} < {1}'.format(req, parts[0]+1))
++            #deps.append('{0} >= {1}'.format(req, version))
++            deps.append('%s >= %s' % (req, version))
++            #deps.append('{0} < {1}'.format(req, parts[0]+1))
++            deps.append('%s < %s' % (req, parts[0]+1))
+ 
+     return deps
+             
+diff -urN old/nodejs-symlink-deps new/nodejs-symlink-deps
+--- old/nodejs-symlink-deps	2013-11-06 15:47:20.742880061 +0000
++++ new/nodejs-symlink-deps	2013-11-06 15:45:49.140824985 +0000
+@@ -23,7 +23,7 @@
+ # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ # IN THE SOFTWARE.
+ 
+-import json
++import simplejson as json
+ import os
+ import sys
+ 
+@@ -33,14 +33,15 @@
+     except OSError:
+         if os.path.islink(dest) and os.path.realpath(dest) == os.path.normpath(source):
+             sys.stderr.write("""
+-WARNING: the symlink for dependency "{0}" already exists
++WARNING: the symlink for dependency "%s" already exists
+ 
+ This could mean that the dependency exists in both devDependencies and 
+ dependencies, which may cause trouble for people using this module with npm.
+ 
+ Please report this to upstream. For more information, see:
+     <https://github.com/tchollingsworth/nodejs-packaging/pull/1>
+-""".format(dest))
++""" %s (dest))
++#""".format(dest))
+             
+         else:
+             sys.stderr.write("""
+@@ -58,7 +59,8 @@
+ libraries, please use `%nodejs_fixdep -r` in %prep to remove the dependency on
+ the bundled module. This will prevent an unnecessary dependency on the system
+ version of the module and eliminate this error.
+-""".format(dest))
++""" % (dest))
++#""".format(dest))
+             sys.exit(1)
+         
+ 
+@@ -67,7 +69,8 @@
+         for dep, ver in deps.iteritems():
+             if dep in mvpkgs and ver != '' and ver != '*':
+                 depver = ver.lstrip('~').split('.')[0]
+-                target = os.path.join(sitelib, '{0}@{1}'.format(dep, depver))
++                #target = os.path.join(sitelib, '{0}@{1}'.format(dep, depver))
++                target = os.path.join(sitelib, '%s@%s' % (dep, depver))
+             else:
+                 target = os.path.join(sitelib, dep)
+                 
