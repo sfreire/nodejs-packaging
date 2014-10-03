@@ -1,5 +1,6 @@
 nodejs-packaging
 ================
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/sfreire/nodejs-packaging?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 nodejs-packaging compatible package for RHEL5/Centos5 based on EPEL sources
 
